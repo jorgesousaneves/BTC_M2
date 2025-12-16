@@ -1,60 +1,65 @@
-# 📊 Monitor de Liquidez Global & Bitcoin
-
-> **Análise de Engenharia de Dados sobre a correlação entre a Base Monetária Global (M2) e o preço do Bitcoin.**
+# 🌊 Global Liquidity vs. Bitcoin: Correlation Monitor
 
 ![Status](https://img.shields.io/badge/Status-Concluído-success)
 ![Stack](https://img.shields.io/badge/Stack-Databricks%20|%20PySpark%20|%20PowerBI-blue)
 
-## 🖼️ Visão Geral do Dashboard
+> **"O Bitcoin é apenas uma esponja de liquidez dos Bancos Centrais?"**
 
-<img width="1919" height="1079" alt="Image" src="https://github.com/user-attachments/assets/21a56880-f09b-4aca-a110-759d960438e4" />
----
+Este projeto de **Business Intelligence & Data Engineering** investiga matematicamente a correlação entre a impressão de dinheiro global (M2 Money Supply) e a valorização do Bitcoin.
 
-## 💼 O Problema de Negócio
-
-É consenso no mercado financeiro que o Bitcoin funciona como uma **"esponja de liquidez global"**. No entanto, utilizar apenas agregados monetários (M2) como indicador único de compra/venda pode ser fatal para o investidor.
-
-O desafio deste projeto foi quantificar essa relação matematicamente para entender:
-1.  **Quando** a liquidez dita o preço (tendência macro).
-2.  **Quando** fatores internos do criptomercado predominam (ruído e divergência).
+Mais do que um dashboard, este projeto demonstra como resolver problemas complexos de **modelagem de séries temporais** (frequências diferentes de dados) utilizando um pipeline robusto no Databricks.
 
 ---
 
-## 🛠️ A Solução Técnica (Lakehouse)
+## 🖼️ Resultado Final (Dashboard)
 
-Construí um pipeline de dados ponta a ponta (**End-to-End**) para cruzar dados macroeconômicos com a ação de preço do Bitcoin, garantindo governança e performance.
+O painel permite identificar divergências macroeconômicas (quando o preço descola da liquidez) para apoiar teses de investimento.
 
-### Arquitetura do Pipeline
-* **🐍 Ingestão:** Scripts Python conectando nas APIs oficiais do **FRED** (Federal Reserve Economic Data) e **Yahoo Finance**.
-* **⚙️ Engenharia:** Processamento no **Databricks (PySpark)** utilizando a **Arquitetura Medalhão**:
-    * *Bronze:* Dados brutos.
-    * *Silver:* Tratamento de séries temporais e **interpolação de dados** (conversão de frequência mensal para diária).
-    * *Gold:* Agregação analítica.
-* **📊 Analytics:** Dashboard no **Power BI** com medidas **DAX** avançadas para cálculos de correlação dinâmica e KPIs.
+<img width="1919" height="1079" alt="Dashboard Liquidez vs BTC" src="https://github.com/user-attachments/assets/21a56880-f09b-4aca-a110-759d960438e4" />
 
 ---
 
-## 💡 Insights & Conclusões (A "Verdade" dos Dados)
+## 🧠 O Problema de Negócio
 
-### 1. A Força da Maré (Correlação 0.62)
-O estudo revelou uma correlação de Pearson de **0.62** no longo prazo.
-> **Conclusão:** Isso confirma que a Liquidez Global define a **tendência primária** (o "Beta" do mercado). Quando os Bancos Centrais expandem o balanço, o Bitcoin tende a performar positivamente.
+Analistas de mercado debatem se o Bitcoin sobe por mérito próprio ou apenas pela desvalorização das moedas fiduciárias. Para responder isso, precisamos cruzar:
+1.  **Preço do Bitcoin:** Dados diários/segundo.
+2.  **Oferta Monetária (M2):** Dados mensais divulgados pelo FED.
 
-### 2. O Perigo da Correlação Cega (Distorções)
-Os dados evidenciaram momentos claros de **desacoplamento**.
-* **Exemplo Prático:** Em Maio de 2021, a linha de Liquidez (M2) continuou subindo, mas o Bitcoin sofreu uma correção severa de ~50%.
-* **Causa:** Fatores exógenos (Banimento da mineração na China) superaram a força da liquidez momentaneamente.
+**A dor:** Tentar cruzar esses dados no Excel ou Power BI direto gera lacunas (nulls) ou agregações erradas que distorcem a correlação.
 
-### 🏁 Conclusão Crítica
-A Liquidez Global é o **"combustível"**, mas não é o **"piloto"**.
-O projeto demonstra que modelos preditivos baseados unicamente em M2 são insuficientes para *market timing* de curto prazo, servindo melhor como indicadores de ciclos macroeconômicos de longo prazo.
+---
+
+## 🛠️ A Solução Técnica (Pipeline & Time Series)
+
+Construí um pipeline **End-to-End** focado na integridade da série temporal.
+
+### 1. Ingestão Automatizada (Bronze)
+* Conexão via Python com APIs do **FRED (Federal Reserve Economic Data)** e **Yahoo Finance**.
+* [Ver código Bronze](bronze.ipynb)
+
+### 2. O Pulo do Gato: Tratamento de Granularidade (Silver)
+Aqui está o diferencial técnico do projeto. Para cruzar dados diários com mensais, utilizei **PySpark Window Functions** para realizar uma interpolação técnica (*Forward Fill*).
+* **Técnica:** O valor do M2 de janeiro é repetido para todos os dias de janeiro até que saia o dado de fevereiro.
+* **Resultado:** Uma série contínua e correlacionável, sem "buracos" no gráfico.
+* [Ver código Silver](silver.ipynb)
+
+### 3. Normalização e Performance (Gold)
+* **Base 100:** Criação de índices normalizados (Index = 100) para comparar a *taxa de crescimento* dos dois ativos na mesma escala.
+* **Otimização:** Uso de `ZORDER BY (data)` para garantir que o Power BI filtre os dados históricos instantaneamente.
+* [Ver código Gold](gold.ipynb)
+
+---
+
+## 💡 Insights Extraídos
+
+* **Correlação de Longo Prazo:** O estudo apontou uma correlação positiva forte (> 0.6), confirmando que o Bitcoin tende a seguir a expansão monetária global.
+* **Momentos de Ruído:** O dashboard evidenciou que eventos exógenos (como o banimento de mineração na China em 2021) quebram essa correlação temporariamente, criando oportunidades de arbitragem.
 
 ---
 
 ## 💻 Tech Stack
 
-* **Cloud & Processing:** Azure Databricks, Apache Spark (PySpark).
-* **Storage:** Delta Lake (Unity Catalog).
-* **Languages:** Python, SQL, DAX.
-* **Visualization:** Microsoft Power BI.
-
+* **Processamento:** Azure Databricks (PySpark)
+* **Análise de Séries Temporais:** Window Functions, Interpolation
+* **Fontes de Dados:** FRED API, Yahoo Finance API
+* **Visualização:** Power BI (DAX)
